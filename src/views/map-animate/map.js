@@ -109,7 +109,7 @@ export class World extends Mini3d {
       // 创建柱状图
       this.createBar()
       // 创建粒子
-      this.createParticles()
+      // this.createParticles()
       // 创建飞线
       // this.createFlyLine()
       // 创建散点图

@@ -4,12 +4,11 @@
     <div class="return-btn" @click="goBack">返回上一级</div>
     <div class="map-btn-group">
       <div class="btn" :class="{ active: state.bar }" @click="setEffectToggle('bar')">柱状图</div>
-      <div class="btn" :class="{ active: state.flyLine }" @click="setEffectToggle('flyLine')">飞线</div>
+
       <div class="btn" :class="{ active: state.scatter }" @click="setEffectToggle('scatter')">散点图</div>
-      <div class="btn" :class="{ active: state.card }" @click="setEffectToggle('card')">标牌</div>
-      <div class="btn" :class="{ active: state.particle }" @click="setEffectToggle('particle')">粒子特效</div>
+
       <div class="btn" :class="{ active: state.path }" @click="setEffectToggle('path')">路径轨迹</div>
-      <div class="btn" :class="{ active: state.mirror }" @click="setEffectToggle('mirror')">倒影</div>
+
     </div>
   </div>
   <!-- 交互框 -->
@@ -137,11 +136,9 @@ const createCompanyName = () => {
 
 const state = reactive({
   bar: true, // 柱状图
-  flyLine: false, // 飞线
+
   scatter: false, // 散点图
-  card: false, // 标牌
-  particle: false, // 粒子
-  mirror: false, // 倒影
+
   path: false, // 路径轨迹
 })
 const setEffectToggle = (type) => {
@@ -156,22 +153,8 @@ const setEffectToggle = (type) => {
     app.barGroup.visible = state[type]
     app.setLabelVisible("labelGroup", state[type])
   }
-  if (type === "particle") {
-    app.particles.enable = state[type]
-    app.particles.instance.visible = state[type]
-  }
-  if (type === "flyLine") {
-    app.flyLineGroup.visible = state[type]
-    app.flyLineFocusGroup.visible = state[type]
-  }
   if (type === "scatter") {
     app.scatterGroup.visible = state[type]
-  }
-  if (type === "card") {
-    app.setLabelVisible("badgeGroup", state[type])
-  }
-  if (type === "mirror") {
-    app.groundMirror.visible = state[type]
   }
   if (type === "path") {
     app.pathLineGroup.visible = state[type]
