@@ -115,7 +115,7 @@ export class World extends Mini3d {
       // 创建散点图
       this.createScatter()
       // 创建标牌
-      this.createBadgeLabel()
+      // this.createBadgeLabel()
       // 创建路径动画
       this.createPathAnimate()
       // 创建描边动画
@@ -1126,7 +1126,7 @@ export class World extends Mini3d {
     })
   }
   // 创建标牌
-  createBadgeLabel() {
+  createBadgeLabel(data) {
     const self = this
     self.badgeGroup.visible = false
     badgesData.map((data) => {
@@ -1186,7 +1186,7 @@ export class World extends Mini3d {
   // 创建飞线图中心点
   createFlyLineFocus(flyLineCenter) {
     this.flyLineFocusGroup = new Group()
-    this.flyLineFocusGroup.visible = false
+    this.flyLineFocusGroup.visible = true
 
     let [x, y] = this.geoProjection(flyLineCenter)
     this.flyLineFocusGroup.position.set(x, -y, this.depth + 0.47)

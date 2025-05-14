@@ -21,6 +21,9 @@
     <button @click="testCreate">
       飞线图
     </button>
+    <button @click="testDestory">
+      修改
+    </button>
   </div>
 </template>
 
@@ -48,18 +51,22 @@ const getCompanies = async () => {
 // 飞线图测试数据
 let companies_data = [
   {
+    adcode: 150000,
     name: "一汽富华生态有限公司",
     center: [125.244097, 43.874493],
   },
   {
+    adcode: 140000,
     name: "一汽红旗（北京）特种产品展示及保障服务有限公司",
     center: [116.363248, 40.015386],
   },
   {
+    adcode: 320000,
     name: "一汽股权投资（天津）有限公司",
     center: [117.76852, 39.070133],
   },
   {
+    adcode: 500000,
     name: "一汽出行科技有限公司",
     center: [116.190073, 39.912352],
   }
@@ -68,6 +75,57 @@ let companies_data = [
 // 用于手动创建飞线图
 const testCreate = () => {
   app.createFlyLine([116.41995, 40.18994], companies_data)
+}
+
+// 销毁Group的函数
+function disposeGroup(group) {
+  if (!group || !group.isGroup) return;
+
+  // 递归释放所有子对象的资源
+  group.traverse(child => {
+    // 释放几何
+    if (child.geometry) {
+      child.geometry.dispose();
+      child.geometry = null;
+    }
+
+    // 释放材质和纹理
+    if (child.material) {
+      const materials = Array.isArray(child.material)
+        ? child.material
+        : [child.material];
+
+      materials.forEach(material => {
+        // 释放材质关联的纹理
+        if (material.map) material.map.dispose();
+        if (material.lightMap) material.lightMap.dispose();
+        if (material.bumpMap) material.bumpMap.dispose();
+        // 其他纹理类型...
+
+        // 释放材质
+        material.dispose();
+        material = null;
+      });
+    }
+  });
+
+  // 从场景或父对象中移除 Group
+  if (group.parent) {
+    group.parent.remove(group);
+  }
+
+  // 清除 Group 的子对象数组
+  group.clear();
+
+  // 帮助垃圾回收
+  group = null;
+}
+
+// 用于手动销毁飞线图
+const testDestory = () => {
+  let ins = app.flyLineGroup.getInstance()
+  disposeGroup(ins)
+  disposeGroup(app.flyLineFocusGroup)
 }
 
 const state = reactive({
