@@ -18,13 +18,10 @@
       发送请求
     </button>
     <button @click="testCreate">
-      飞线图
+      飞线图以及公司名
     </button>
     <button @click="testDestory">
       修改
-    </button>
-    <button @click="createCompanyName">
-      公司名
     </button>
   </div>
 </template>
@@ -77,6 +74,7 @@ let companies_data = [
 // 用于手动创建飞线图
 const testCreate = () => {
   app.createFlyLine([116.41995, 40.18994], companies_data)
+  app.createBadgeLabel(companies_data)
 }
 
 // 销毁Group的函数
@@ -123,16 +121,52 @@ function disposeGroup(group) {
   group = null;
 }
 
+function disposeGroup2(group) {
+  if (!group || !group.isGroup) return;
+
+  // 递归释放所有子对象的资源
+  group.traverse(child => {
+    // 释放几何
+    if (child.geometry) {
+      child.geometry.dispose();
+      child.geometry = null;
+    }
+
+    // 释放材质和纹理
+    if (child.material) {
+      const materials = Array.isArray(child.material)
+        ? child.material
+        : [child.material];
+
+      materials.forEach(material => {
+        // 释放材质关联的纹理
+        if (material.map) material.map.dispose();
+        if (material.lightMap) material.lightMap.dispose();
+        if (material.bumpMap) material.bumpMap.dispose();
+        // 其他纹理类型...
+
+        // 释放材质
+        material.dispose();
+        material = null;
+      });
+    }
+  });
+
+  // 清除 Group 的子对象数组
+  group.clear();
+
+  // 帮助垃圾回收
+  group = null;
+}
+
 // 用于手动销毁飞线图
 const testDestory = () => {
   let ins = app.flyLineGroup.getInstance()
   disposeGroup(ins)
   disposeGroup(app.flyLineFocusGroup)
+  disposeGroup2(app.badgeGroup)
 }
 
-const createCompanyName = () => {
-  app.createBadgeLabel(companies_data)
-}
 
 const state = reactive({
   bar: true, // 柱状图
