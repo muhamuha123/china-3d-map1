@@ -1126,25 +1126,25 @@ export class World extends Mini3d {
     })
   }
   // 创建标牌
-  createBadgeLabel(data) {
+  createBadgeLabel(company_data) {
     const self = this
-    self.badgeGroup.visible = false
-    badgesData.map((data) => {
-      const [x, y] = this.geoProjection(data.geometry.coordinates)
+    self.badgeGroup.visible = true
+    company_data.map((data) => {
+      const [x, y] = this.geoProjection(data.center)
       labelNameStyle(data, new Vector3(x, -y, this.depth + 0.92))
     })
     function labelNameStyle(data, position) {
       let label = self.label3d.create("", "badges-label", true)
       label.init(
         `<div class="badges-label-wrap">
-        平均工资：<span>${data.value}元</span>
+        <span>${data.name}</span>
         <img class="icon" src="${labelArrow}" alt="" />
       </div>`,
         position
       )
       self.label3d.setLabelStyle(label, 0.1, "x")
       label.setParent(self.badgeGroup)
-      label.hide()
+      // label.hide()
       label.userData.adcode = data.adcode
       label.userData.position = [position.x, position.y, position.z]
       return label

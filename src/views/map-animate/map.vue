@@ -24,6 +24,9 @@
     <button @click="testDestory">
       修改
     </button>
+    <button @click="createCompanyName">
+      公司名
+    </button>
   </div>
 </template>
 
@@ -126,6 +129,10 @@ const testDestory = () => {
   let ins = app.flyLineGroup.getInstance()
   disposeGroup(ins)
   disposeGroup(app.flyLineFocusGroup)
+}
+
+const createCompanyName = () => {
+  app.createBadgeLabel(companies_data)
 }
 
 const state = reactive({
