@@ -4,24 +4,22 @@
     <div class="return-btn" @click="goBack">返回上一级</div>
     <div class="map-btn-group">
       <div class="btn" :class="{ active: state.bar }" @click="setEffectToggle('bar')">柱状图</div>
-
-      <div class="btn" :class="{ active: state.scatter }" @click="setEffectToggle('scatter')">散点图</div>
-
-      <div class="btn" :class="{ active: state.path }" @click="setEffectToggle('path')">路径轨迹</div>
-
     </div>
   </div>
   <!-- 交互框 -->
   <div class="interaction-box">
     <input v-model="inputText" type="text" placeholder="输入查询的问题" />
     <button @click="getCompanies">
-      发送请求
+      查询
+    </button>
+    <button @click="getQuestion">
+      语音识别
     </button>
     <button @click="testCreate">
-      飞线图以及公司名
+      飞线图
     </button>
     <button @click="testDestory">
-      修改
+      删除
     </button>
   </div>
 </template>
@@ -29,52 +27,133 @@
 <script setup>
 import { onMounted, ref, onBeforeUnmount, reactive } from "vue"
 import { World } from "./map"
+import axios from "axios";
 let app = null
 
-// 发送请求获得数据，再创建飞线图
-const getCompanies = async () => {
-  let getCompaniesUrl = '/deepseek2company/'
-  let formData = new FormData()
-  let newQuestion = '一汽集团的子公司有哪些，以json格式返回答案，包含字段公司名称、注册地址、经度、纬度'
-  let jsonData = {
-    'question': newQuestion
+const inputText = ref("")
+
+// 移除代码块标记并解析 JSON
+function parseJsonResponse(text) {
+  try {
+    // 去除 ```json 和 ``` 标记
+    const cleanedText = text
+      .replace(/^.*?```json\n/, '')
+      .replace(/\n```$/, '')
+      .trim();
+
+    // 解析 JSON
+    const jsonData = JSON.parse(cleanedText);
+    return jsonData;
+  } catch (error) {
+    console.error('JSON 解析错误:', error);
+    return null;
   }
-  formData.append('question', newQuestion)
-  const response = await axios.post(getCompaniesUrl, jsonData).then(res => {
+}
+
+function processJsonData(jsonData) {
+  return jsonData.map(item => {
+    // 合并经纬度为 center 字段
+    const longitude = item.longitude;
+    const latitude = item.latitude;
+
+    // 检查经纬度是否存在且为有效数值
+    let center;
+    if (longitude !== undefined && latitude !== undefined) {
+      try {
+        // 尝试转换为数字
+        const lon = parseFloat(longitude);
+        const lat = parseFloat(latitude);
+
+        // 验证转换结果
+        if (!isNaN(lon) && !isNaN(lat)) {
+          center = [lon, lat];
+        } else {
+          console.warn(`警告: 元素 ${item.company_name || '未知'} 的经纬度无法转换为有效数字`);
+          center = [null, null];
+        }
+      } catch (e) {
+        console.warn(`警告: 处理元素 ${item.company_name || '未知'} 的经纬度时出错`, e);
+        center = [null, null];
+      }
+    } else {
+      console.warn(`警告: 元素 ${item.company_name || '未知'} 缺少经纬度字段`);
+      center = [null, null];
+    }
+
+    // 返回处理后的对象（保留原始属性并添加新字段）
+    return {
+      ...item,
+      center,
+      adcode: 150000
+    };
+  });
+}
+
+// 调用语音输入并转文字接口
+const getQuestion = async () => {
+  let getQuestionUrl = '/getquestion/'
+  const response = await axios.get(getQuestionUrl).then(res => {
     console.log(res.data)
+    if (res.data.err_no == 0) {
+      inputText.value = res.data.result[0]
+    }
   }).catch(error => {
     console.log(error)
   })
 }
 
-// 飞线图测试数据
-let companies_data = [
-  {
-    adcode: 150000,
-    name: "一汽富华生态有限公司",
-    center: [125.244097, 43.874493],
-  },
-  {
-    adcode: 140000,
-    name: "一汽红旗（北京）特种产品展示及保障服务有限公司",
-    center: [116.363248, 40.015386],
-  },
-  {
-    adcode: 320000,
-    name: "一汽股权投资（天津）有限公司",
-    center: [117.76852, 39.070133],
-  },
-  {
-    adcode: 500000,
-    name: "一汽出行科技有限公司",
-    center: [116.190073, 39.912352],
+// 发送请求获得数据，再创建飞线图
+const getCompanies = async () => {
+  let getCompaniesUrl = '/deepseek2company/'
+  // let formData = new FormData()
+  let newQuestion = inputText.value
+  if (!newQuestion) {
+    return
   }
-]
+  let realQuestion = newQuestion + '并以json格式返回答案，包含字段company_name、registered_address、longitude、latitude'
+  let jsonData = {
+    'question': realQuestion
+  }
+  // formData.append('question', newQuestion)
+  const response = await axios.post(getCompaniesUrl, jsonData).then(res => {
+    let jsonResult = parseJsonResponse(res.data)
+    let jsonData = processJsonData(jsonResult)
+    console.log(jsonData)
+    companies_data.value = jsonData
+  }).catch(error => {
+    console.log(error)
+  })
+}
+
+let companies_data = ref([])
+// 飞线图测试数据
+// let companies_data = [
+//   {
+//     adcode: 150000,
+//     company_name: "一汽富华生态有限公司",
+//     center: [125.244097, 43.874493],
+//   },
+//   {
+//     adcode: 140000,
+//     company_name: "一汽红旗（北京）特种产品展示及保障服务有限公司",
+//     center: [116.363248, 40.015386],
+//   },
+//   {
+//     adcode: 320000,
+//     company_name: "一汽股权投资（天津）有限公司",
+//     center: [117.76852, 39.070133],
+//   },
+//   {
+//     adcode: 500000,
+//     company_name: "一汽出行科技有限公司",
+//     center: [116.190073, 39.912352],
+//   }
+// ]
 
 // 用于手动创建飞线图
 const testCreate = () => {
-  app.createFlyLine([116.41995, 40.18994], companies_data)
-  app.createBadgeLabel(companies_data)
+  app.createFlyLine([116.41995, 40.18994], companies_data.value)
+  app.createBadgeLabel(companies_data.value)
 }
 
 // 销毁Group的函数
@@ -170,10 +249,6 @@ const testDestory = () => {
 
 const state = reactive({
   bar: true, // 柱状图
-
-  scatter: false, // 散点图
-
-  path: false, // 路径轨迹
 })
 const setEffectToggle = (type) => {
   console.log(app.currentScene)
@@ -187,20 +262,10 @@ const setEffectToggle = (type) => {
     app.barGroup.visible = state[type]
     app.setLabelVisible("labelGroup", state[type])
   }
-  if (type === "scatter") {
-    app.scatterGroup.visible = state[type]
-  }
-  if (type === "path") {
-    app.pathLineGroup.visible = state[type]
-  }
 }
 // 设置按钮启用和禁用
 const setEnable = (bool) => {
   state.bar = bool
-  state.flyLine = bool
-  state.scatter = bool
-  state.card = bool
-  state.path = bool
 }
 // 返回上一级
 const goBack = () => {

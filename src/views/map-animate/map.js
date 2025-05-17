@@ -88,19 +88,22 @@ export class World extends Mini3d {
       this.mainSceneGroup = new Group()
       this.childSceneGroup = new Group()
       this.labelGroup = new Group()
-      this.gqGroup = new Group() // 光圈组
+      // 光圈组
+      this.gqGroup = new Group()
+      // 省份名称组
       this.provinceNameGroup = new Group()
+      // 标牌组
       this.badgeGroup = new Group()
       this.label3d = new Label3d(this)
+      // 设置主场景组旋转角度
       this.mainSceneGroup.rotateX(-Math.PI / 2)
-
+      // 添加组关联
       this.mainSceneGroup.add(this.labelGroup, this.gqGroup, this.provinceNameGroup, this.badgeGroup)
       this.sceneGroup.add(this.mainSceneGroup, this.childSceneGroup)
       this.scene.add(this.sceneGroup)
       // 创建底图
       this.createFloor()
       // 旋转边框
-
       this.createRotateBorder()
       // 处理地图
       this.createModel()
@@ -1137,7 +1140,7 @@ export class World extends Mini3d {
       let label = self.label3d.create("", "badges-label", true)
       label.init(
         `<div class="badges-label-wrap">
-        <span>${data.name}</span>
+        <span>${data.company_name}</span>
         <img class="icon" src="${labelArrow}" alt="" />
       </div>`,
         position
