@@ -104,6 +104,7 @@ const getQuestion = async () => {
 
 // 发送请求获得数据，再创建飞线图
 const getCompanies = async () => {
+  app.toastLoading.show() // 加载中
   let getCompaniesUrl = '/deepseek2company/'
   // let formData = new FormData()
   let newQuestion = inputText.value
@@ -120,8 +121,10 @@ const getCompanies = async () => {
     let jsonData = processJsonData(jsonResult)
     console.log(jsonData)
     companies_data.value = jsonData
+    app.toastLoading.hide()
   }).catch(error => {
     console.log(error)
+    app.toastLoading.hide()
   })
 }
 
@@ -152,7 +155,11 @@ let companies_data = ref([])
 
 // 用于手动创建飞线图
 const testCreate = () => {
-  app.createFlyLine([116.41995, 40.18994], companies_data.value)
+  if (companies_data.value.length == 0) {
+    console.log('没有公司数据')
+    return
+  }
+  app.createFlyLine(companies_data.value[0].center, companies_data.value)
   app.createBadgeLabel(companies_data.value)
 }
 
@@ -200,6 +207,7 @@ function disposeGroup(group) {
   group = null;
 }
 
+// 销毁Group但不销毁其父对象
 function disposeGroup2(group) {
   if (!group || !group.isGroup) return;
 

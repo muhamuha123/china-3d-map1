@@ -654,7 +654,8 @@ export class World extends Mini3d {
       this.childMap = null
 
       this.setMainMapVisible(true)
-      this.setLabelVisible("labelGroup", true)
+      // this.setLabelVisible("labelGroup", true)
+      this.setLabelVisible("provinceNameGroup", true)
     } else {
       let userData = this.history.present
 
