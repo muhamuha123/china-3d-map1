@@ -830,10 +830,8 @@ export class World extends Mini3d {
     const max = data[0].value
 
     this.allBar = [] //allBar是只有一个光柱
-    this.allBarMaterial = []
-    // this.allGuangquan = []
+    this.allBarMaterial = [] // 这时柱子其余的部分
     this.allProvinceLabel = []
-    // this.allProvinceNameLabel = []
     data.map((item, index) => {
       // 网格
       let geoHeight = height * (item.value / max)
@@ -870,24 +868,12 @@ export class World extends Mini3d {
       let hg = this.createHUIGUANG(geoHeight, index < 3 ? 0xfffef4 : 0x77fbf5)
       areaBar.add(...hg)
       barGroup.add(areaBar)
-
-      // 创建每个省份名周围的光圈
-      // let guangQuan = this.createQuan()
-      // guangQuan.position.set(x, -y, this.depth + 0.46)
-      // guangQuan.userData.name = item.name
-      // guangQuan.userData.adcode = item.adcode
-      // guangQuan.userData.position = [x, -y, this.depth + 0.46]
-      // this.gqGroup.add(guangQuan)
-
       // 创建光柱人口标签
       let barLabel = labelStyle04(item, index, new Vector3(x, -y, this.depth + 0.9 + geoHeight))
-      // 创建省份名称标签
-      // let nameLabel = labelNameStyle(item, index, new Vector3(x, -y - 1.5, this.depth + 0.4))
+
       this.allBar.push(areaBar)
       this.allBarMaterial.push(material)
-      // this.allGuangquan.push(guangQuan)
       this.allProvinceLabel.push(barLabel)
-      // this.allProvinceNameLabel.push(nameLabel)
     })
 
     this.mainSceneGroup.add(barGroup)
