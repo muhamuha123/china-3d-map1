@@ -843,14 +843,6 @@ export class World extends Mini3d {
         depthTest: false,
         fog: false,
       })
-      // 设置渐变材质
-      // new GradientShader(material, {
-      //   uColor1: index < 3 ? 0xfbdf88 : 0x50bbfe,
-      //   uColor2: index < 3 ? 0xfbdf88 : 0x50bbfe,
-      //   size: geoHeight,
-      //   dir: "y",
-      // })
-
       // BoxGeometry用于创建长方体，即柱状图中的柱子
       const geo = new BoxGeometry(0.05 * factor, 0.05 * factor, geoHeight)
       // 上移
