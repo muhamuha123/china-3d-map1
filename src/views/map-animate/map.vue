@@ -2,9 +2,9 @@
   <div class="map-level">
     <canvas id="canvas"></canvas>
     <div class="return-btn" @click="goBack">返回上一级</div>
-    <div class="map-btn-group">
+    <!-- <div class="map-btn-group">
       <div class="btn" :class="{ active: state.bar }" @click="setEffectToggle('bar')">柱状图</div>
-    </div>
+    </div> -->
   </div>
   <!-- 交互框 -->
   <div class="interaction-box">
@@ -18,11 +18,14 @@
     <button @click="flyLineCreate">
       飞线图
     </button>
-    <button @click="flyLineDestory">
+    <button @click="flyLineDestroy">
       删除飞线图
     </button>
     <button @click="barCreate">
       柱状图
+    </button>
+    <button @click="barDestroy">
+      删除柱状图
     </button>
   </div>
 </template>
@@ -31,6 +34,8 @@
 import { onMounted, ref, onBeforeUnmount, reactive } from "vue"
 import { World } from "./map"
 import axios from "axios";
+import gsap from "gsap"
+
 let app = null
 
 const inputText = ref("")
@@ -157,8 +162,6 @@ let companies_data = ref([])
 //   }
 // ]
 
-
-
 // 用于手动创建飞线图
 const flyLineCreate = () => {
   if (companies_data.value.length == 0) {
@@ -169,12 +172,105 @@ const flyLineCreate = () => {
   app.createBadgeLabel(companies_data.value)
 }
 
+// 用于手动销毁飞线图
+const flyLineDestroy = () => {
+  let ins = app.flyLineGroup.getInstance()
+  disposeGroup(ins)
+  disposeGroup(app.flyLineFocusGroup)
+  disposeGroup2(app.badgeGroup)
+}
+
 // 产量数据
-let capacity_data = ref([])
+let capacity_data = ref([
+  {
+    adcode: 150000,
+    company_name: "一汽长春工厂",
+    center: [125.244097, 43.874493],
+    capacity: 20,
+  },
+  {
+    adcode: 140000,
+    company_name: "一汽成都工厂",
+    center: [116.363248, 40.015386],
+    capacity: 5,
+  },
+  {
+    adcode: 320000,
+    company_name: "一汽天津工厂",
+    center: [117.76852, 39.070133],
+    capacity: 15,
+  },
+  {
+    adcode: 500000,
+    company_name: "一汽武汉工厂",
+    center: [116.190073, 39.912352],
+    capacity: 10,
+  }
+])
 
 // 用于手动创建柱状图
 const barCreate = () => {
+  app.createBar() // 创建柱状图，但是没有显示出来
+  let tl = gsap.timeline() // 创建时间线
+  // 柱状图升起动画
+  app.allBar.map((item, index) => {
+    tl.add(
+      gsap.to(item.scale, {
+        duration: 1,
+        delay: 0.05 * index,
+        x: 1,
+        y: 1,
+        z: 1,
+        ease: "circ.out",
+      }),
+      0
+    )
+  })
+  // 柱状图材质变化的动画，由不透明变透明
+  app.allBarMaterial.map((item, index) => {
+    tl.add(
+      gsap.to(item, {
+        duration: 0.5,
+        delay: 0.05 * index,
+        opacity: 1, // 设置透明度
+        ease: "circ.out",
+      }),
+      0
+    )
+  })
+  app.allProvinceLabel.map((item, index) => {
+    let element = item.element.querySelector(".provinces-label-style02-wrap")
+    let number = item.element.querySelector(".number .value")
+    let numberVal = Number(number.innerText)
+    let numberAnimate = {
+      score: 0,
+    }
+    tl.add(
+      gsap.to(element, {
+        duration: 0.5,
+        delay: 0.05 * index,
+        translateY: 0,
+        opacity: 1,
+        ease: "circ.out",
+      }),
+      0
+    )
+    let text = gsap.to(numberAnimate, {
+      duration: 0.5,
+      delay: 0.05 * index,
+      score: numberVal,
+      onUpdate: showScore,
+    })
+    function showScore() {
+      number.innerText = numberAnimate.score.toFixed(0)
+    }
+    tl.add(text, 0)
+  })
+}
 
+const barDestroy = () => {
+  disposeGroup2(app.barGroup)
+  disposeGroup2(app.labelGroup)
 }
 
 // 销毁Group的函数
@@ -260,14 +356,6 @@ function disposeGroup2(group) {
   group = null;
 }
 
-// 用于手动销毁飞线图
-const flyLineDestory = () => {
-  let ins = app.flyLineGroup.getInstance()
-  disposeGroup(ins)
-  disposeGroup(app.flyLineFocusGroup)
-  disposeGroup2(app.badgeGroup)
-}
-
 
 const state = reactive({
   bar: true, // 柱状图
@@ -281,8 +369,8 @@ const setEffectToggle = (type) => {
   state[type] = !state[type]
 
   if (type === "bar") {
-    app.barGroup.visible = state[type]
-    app.setLabelVisible("labelGroup", state[type])
+    app.barGroup.visible = state[type] // 设置柱状图可见
+    app.setLabelVisible("labelGroup", state[type]) // 设置柱状图上方的数字标签可见
   }
 }
 // 设置按钮启用和禁用

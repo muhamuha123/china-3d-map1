@@ -87,18 +87,21 @@ export class World extends Mini3d {
       this.sceneGroup = new Group()
       this.mainSceneGroup = new Group()
       this.childSceneGroup = new Group()
+      // 柱状图组
+      this.barGroup = new Group()
+      // 柱状图上的数字标签
       this.labelGroup = new Group()
       // 光圈组
       this.gqGroup = new Group()
       // 省份名称组
       this.provinceNameGroup = new Group()
-      // 标牌组
+      // 企业名称标牌组
       this.badgeGroup = new Group()
       this.label3d = new Label3d(this)
       // 设置主场景组旋转角度
       this.mainSceneGroup.rotateX(-Math.PI / 2)
       // 添加组关联
-      this.mainSceneGroup.add(this.labelGroup, this.gqGroup, this.provinceNameGroup, this.badgeGroup)
+      this.mainSceneGroup.add(this.labelGroup, this.gqGroup, this.provinceNameGroup, this.badgeGroup, this.barGroup)
       this.sceneGroup.add(this.mainSceneGroup, this.childSceneGroup)
       this.scene.add(this.sceneGroup)
       // 创建底图
@@ -184,7 +187,7 @@ export class World extends Mini3d {
           tl.add(
             gsap.to(obj.material[0], {
               duration: 1,
-              opacity: 1,
+              opacity: 1, //设置透明度为0
               ease: "circ.out",
             }),
             "focusMapOpacity"
@@ -250,7 +253,7 @@ export class World extends Mini3d {
         }),
         "focusMapOpacity"
       )
-      // 柱状光柱升起来的动画
+      // 柱状光柱升起来的动画，一开始柱子都是透明的
       this.allBar.map((item, index) => {
         tl.add(
           gsap.to(item.scale, {
@@ -264,13 +267,13 @@ export class World extends Mini3d {
           "bar"
         )
       })
-      // 柱状图中心长方体升起来的动画
+      // 柱状图材质变化的动画，由不透明变透明
       this.allBarMaterial.map((item, index) => {
         tl.add(
           gsap.to(item, {
             duration: 0.5,
             delay: 0.05 * index,
-            opacity: 1,
+            opacity: 1, // 设置透明度
             ease: "circ.out",
           }),
           "bar"
@@ -668,9 +671,9 @@ export class World extends Mini3d {
       this.childMap && this.childMap.destroy()
       this.childMap = null
 
-      this.setMainMapVisible(true)
-      // this.setLabelVisible("labelGroup", true)
-      this.setLabelVisible("provinceNameGroup", true)
+      this.setMainMapVisible(true) // 主地图可见
+      // this.setLabelVisible("labelGroup", true) // 人口标牌是否可见应取决于柱状图是否可见
+      this.setLabelVisible("provinceNameGroup", true) // 省份名称可见
     } else {
       let userData = this.history.present
 
@@ -831,7 +834,7 @@ export class World extends Mini3d {
 
     this.allBar = [] //allBar是只有一个光柱
     this.allBarMaterial = [] // 这时柱子其余的部分
-    this.allProvinceLabel = []
+    this.allProvinceLabel = [] // 柱子上的人口数量标签
     data.map((item, index) => {
       // 网格
       let geoHeight = height * (item.value / max)
@@ -839,7 +842,7 @@ export class World extends Mini3d {
       let material = new MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0,
+        opacity: 0, // 透明度
         depthTest: false,
         fog: false,
       })
@@ -859,6 +862,7 @@ export class World extends Mini3d {
       // 创建辉光
       let hg = this.createHUIGUANG(geoHeight, index < 3 ? 0xfffef4 : 0x77fbf5)
       areaBar.add(...hg)
+
       barGroup.add(areaBar)
       // 创建光柱人口标签
       let barLabel = labelStyle04(item, index, new Vector3(x, -y, this.depth + 0.9 + geoHeight))
@@ -868,15 +872,17 @@ export class World extends Mini3d {
       this.allProvinceLabel.push(barLabel)
     })
 
+    // this.mainSceneGroup.barGroup = barGroup
     this.mainSceneGroup.add(barGroup)
+    // <div class="no">${index + 1}</div>
     // 人口标签
     function labelStyle04(data, index, position) {
       let label = self.label3d.create("", "provinces-label-style02", true)
       label.init(
         `<div class="provinces-label-style02 ${index < 3 ? "yellow" : ""}">
       <div class="provinces-label-style02-wrap">
-        <div class="number"><span class="value">${data.value}</span><span class="unit">万人</span></div>
-        <div class="no">${index + 1}</div>
+        <div class="number"><span class="value">${data.value}</span><span class="unit">万</span></div>
+        
       </div>
     </div>`,
         position
