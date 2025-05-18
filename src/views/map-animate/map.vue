@@ -15,11 +15,14 @@
     <button @click="getQuestion">
       语音识别
     </button>
-    <button @click="testCreate">
+    <button @click="flyLineCreate">
       飞线图
     </button>
-    <button @click="testDestory">
-      删除
+    <button @click="flyLineDestory">
+      删除飞线图
+    </button>
+    <button @click="barCreate">
+      柱状图
     </button>
   </div>
 </template>
@@ -128,6 +131,7 @@ const getCompanies = async () => {
   })
 }
 
+// 企业图谱数据
 let companies_data = ref([])
 // 飞线图测试数据
 // let companies_data = [
@@ -153,14 +157,24 @@ let companies_data = ref([])
 //   }
 // ]
 
+
+
 // 用于手动创建飞线图
-const testCreate = () => {
+const flyLineCreate = () => {
   if (companies_data.value.length == 0) {
     console.log('没有公司数据')
     return
   }
   app.createFlyLine(companies_data.value[0].center, companies_data.value)
   app.createBadgeLabel(companies_data.value)
+}
+
+// 产量数据
+let capacity_data = ref([])
+
+// 用于手动创建柱状图
+const barCreate = () => {
+
 }
 
 // 销毁Group的函数
@@ -247,7 +261,7 @@ function disposeGroup2(group) {
 }
 
 // 用于手动销毁飞线图
-const testDestory = () => {
+const flyLineDestory = () => {
   let ins = app.flyLineGroup.getInstance()
   disposeGroup(ins)
   disposeGroup(app.flyLineFocusGroup)

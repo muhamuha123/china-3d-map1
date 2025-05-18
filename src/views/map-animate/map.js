@@ -107,7 +107,7 @@ export class World extends Mini3d {
       this.createRotateBorder()
       // 处理地图
       this.createModel()
-      // 添加事件
+      // 添加事件（鼠标移动地图升高）
       this.addEvent()
       // 创建柱状图
       this.createBar()
@@ -128,10 +128,12 @@ export class World extends Mini3d {
       // }
       // 创建时间线
       let tl = gsap.timeline()
-      // 相机动画
+      // 相机动画, addLabel是标记特定的时间点
       tl.addLabel("focusMap", 3.5)
       tl.addLabel("focusMapOpacity", 4.0)
       tl.addLabel("bar", 5.0)
+
+      // 相机推进动画
       tl.add(
         gsap.to(this.camera.instance.position, {
           duration: 2.5,
@@ -145,7 +147,7 @@ export class World extends Mini3d {
           },
         })
       )
-
+      // 启动时圆圈旋转动画
       tl.add(
         gsap.to(this.quan.rotation, {
           duration: 5,
@@ -153,7 +155,7 @@ export class World extends Mini3d {
         }),
         "-=2"
       )
-
+      // 别删
       tl.add(
         gsap.to(this.focusMapGroup.position, {
           duration: 1,
@@ -163,6 +165,7 @@ export class World extends Mini3d {
         }),
         "focusMap"
       )
+      // 别删
       tl.add(
         gsap.to(this.focusMapGroup.scale, {
           duration: 1,
@@ -173,7 +176,7 @@ export class World extends Mini3d {
         }),
         "focusMap"
       )
-
+      // 各个省份排序跳出的动画
       this.provinceMesh.mapGroup.traverse((obj) => {
         if (obj.isMesh) {
           tl.add(
@@ -196,6 +199,8 @@ export class World extends Mini3d {
           )
         }
       })
+
+      // 地图底部向上移动的动画
       tl.add(
         gsap.to(this.focusMapSideMaterial, {
           duration: 1,
@@ -209,6 +214,7 @@ export class World extends Mini3d {
         "focusMapOpacity"
       )
 
+      // 地图相关动画，别删
       tl.add(
         gsap.to(this.provinceLineMaterial, {
           duration: 0.5,
@@ -218,6 +224,7 @@ export class World extends Mini3d {
         "focusMapOpacity"
       )
 
+      // 底部旋转圆圈1
       tl.add(
         gsap.to(this.rotateBorder1.scale, {
           delay: 0.3,
@@ -229,6 +236,7 @@ export class World extends Mini3d {
         }),
         "focusMapOpacity"
       )
+      // 底部旋转圆圈2
       tl.add(
         gsap.to(this.rotateBorder2.scale, {
           duration: 1,
@@ -240,6 +248,7 @@ export class World extends Mini3d {
         }),
         "focusMapOpacity"
       )
+      // 柱状光柱升起来的动画
       this.allBar.map((item, index) => {
         tl.add(
           gsap.to(item.scale, {
@@ -253,6 +262,7 @@ export class World extends Mini3d {
           "bar"
         )
       })
+      // 柱状图中心长方体升起来的动画
       this.allBarMaterial.map((item, index) => {
         tl.add(
           gsap.to(item, {
@@ -264,34 +274,36 @@ export class World extends Mini3d {
           "bar"
         )
       })
-      this.allProvinceLabel.map((item, index) => {
-        let element = item.element.querySelector(".provinces-label-style02-wrap")
-        let number = item.element.querySelector(".number .value")
-        let numberVal = Number(number.innerText)
-        let numberAnimate = {
-          score: 0,
-        }
-        tl.add(
-          gsap.to(element, {
-            duration: 0.5,
-            delay: 0.05 * index,
-            translateY: 0,
-            opacity: 1,
-            ease: "circ.out",
-          }),
-          "bar"
-        )
-        let text = gsap.to(numberAnimate, {
-          duration: 0.5,
-          delay: 0.05 * index,
-          score: numberVal,
-          onUpdate: showScore,
-        })
-        function showScore() {
-          number.innerText = numberAnimate.score.toFixed(0)
-        }
-        tl.add(text, "bar")
-      })
+      // 省份人口标签动画
+      // this.allProvinceLabel.map((item, index) => {
+      //   let element = item.element.querySelector(".provinces-label-style02-wrap")
+      //   let number = item.element.querySelector(".number .value")
+      //   let numberVal = Number(number.innerText)
+      //   let numberAnimate = {
+      //     score: 0,
+      //   }
+      //   tl.add(
+      //     gsap.to(element, {
+      //       duration: 0.5,
+      //       delay: 0.05 * index,
+      //       translateY: 0,
+      //       opacity: 1,
+      //       ease: "circ.out",
+      //     }),
+      //     "bar"
+      //   )
+      //   let text = gsap.to(numberAnimate, {
+      //     duration: 0.5,
+      //     delay: 0.05 * index,
+      //     score: numberVal,
+      //     onUpdate: showScore,
+      //   })
+      //   function showScore() {
+      //     number.innerText = numberAnimate.score.toFixed(0)
+      //   }
+      //   tl.add(text, "bar")
+      // })
+      // 省份名称动画
       this.allProvinceNameLabel.map((item, index) => {
         let element = item.element.querySelector(".provinces-name-label-wrap")
 
@@ -306,6 +318,7 @@ export class World extends Mini3d {
           "bar"
         )
       })
+      // 省份名称周围光圈动画
       this.allGuangquan.map((item, index) => {
         tl.add(
           gsap.to(item.children[0].scale, {
@@ -448,7 +461,7 @@ export class World extends Mini3d {
     }
   }
 
-  // 添加事件
+  // 用于处理鼠标在地图上移动的事件
   addEvent() {
     let objectsHover = []
 
@@ -466,10 +479,10 @@ export class World extends Mini3d {
           })
         },
       })
-      this.setBarMove(mesh.userData.adcode, "down")
-      this.setGQMove(mesh.userData.adcode, "down")
-      this.setLabelMove(mesh.userData.adcode, "down")
-      this.setScatterMove(mesh.userData.adcode, "down")
+      this.setBarMove(mesh.userData.adcode, "down") // 柱状图上移
+      this.setGQMove(mesh.userData.adcode, "down") // 旋转圈圈上移
+      this.setLabelMove(mesh.userData.adcode, "down") // 文字标签上移
+      this.setScatterMove(mesh.userData.adcode, "down") // 散点图上移
     }
     const move = (mesh) => {
       gsap.to(mesh.scale, {
@@ -665,6 +678,7 @@ export class World extends Mini3d {
     this.camera.controls.reset()
   }
 
+  // 暂时不知道啥意思
   calcUv2(geometry, width, height, minX, minY) {
     const positionAttribute = geometry.attributes.position
     const uvAttribute = geometry.attributes.uv
@@ -684,6 +698,7 @@ export class World extends Mini3d {
     geometry.computeVertexNormals()
   }
 
+  // 创建省份材质
   createProvinceMaterial() {
     let topNormal = this.assets.instance.getResource("topNormal")
     topNormal.wrapS = topNormal.wrapT = RepeatWrapping
@@ -761,6 +776,44 @@ export class World extends Mini3d {
     }
     return [topMaterial, sideMaterial]
   }
+
+  // 不创建柱状图，仅创建省份名称
+  createProvinceName() {
+    let self = this
+    this.allGuangquan = [] //光圈组
+    this.allProvinceNameLabel = [] // 省份名称组
+    let data = sortByValue(provincesData)
+    // 遍历省份数据
+    data.map((item, index) => {
+      // 创建每个省份名周围的光圈
+      let guangQuan = this.createQuan()
+      guangQuan.position.set(x, -y, this.depth + 0.46)
+      guangQuan.userData.name = item.name
+      guangQuan.userData.adcode = item.adcode
+      guangQuan.userData.position = [x, -y, this.depth + 0.46]
+      this.gqGroup.add(guangQuan)
+      // 创建省份名称标签
+      let nameLabel = labelNameStyle(item, index, new Vector3(x, -y - 1.5, this.depth + 0.4))
+      // 添加光圈
+      this.allGuangquan.push(guangQuan)
+      // 添加省份名称
+      this.allProvinceNameLabel.push(nameLabel)
+    })
+
+    function labelNameStyle(data, index, position) {
+      let label = self.label3d.create("", "provinces-name-label", true)
+      label.init(
+        `<div class="provinces-name-label"><div class="provinces-name-label-wrap">${data.name}</div></div>`,
+        position
+      )
+      self.label3d.setLabelStyle(label, 0.08, "x")
+      label.setParent(self.provinceNameGroup)
+      label.userData.adcode = data.adcode
+      label.userData.position = [position.x, position.y, position.z]
+      return label
+    }
+  }
+
   // 创建柱状图
   createBar() {
     let self = this
@@ -772,7 +825,7 @@ export class World extends Mini3d {
     const height = 4.0 * factor
     const max = data[0].value
 
-    this.allBar = []
+    this.allBar = [] //allBar是只有一个光柱
     this.allBarMaterial = []
     this.allGuangquan = []
     this.allProvinceLabel = []
@@ -789,13 +842,14 @@ export class World extends Mini3d {
         fog: false,
       })
       // 设置渐变材质
+      // new GradientShader(material, {
+      //   uColor1: index < 3 ? 0xfbdf88 : 0x50bbfe,
+      //   uColor2: index < 3 ? 0xfbdf88 : 0x50bbfe,
+      //   size: geoHeight,
+      //   dir: "y",
+      // })
 
-      new GradientShader(material, {
-        uColor1: index < 3 ? 0xfbdf88 : 0x50bbfe,
-        uColor2: index < 3 ? 0xfbdf88 : 0x50bbfe,
-        size: geoHeight,
-        dir: "y",
-      })
+      // BoxGeometry用于创建长方体，即柱状图中的柱子
       const geo = new BoxGeometry(0.05 * factor, 0.05 * factor, geoHeight)
       // 上移
       geo.translate(0, 0, geoHeight / 2)
@@ -809,6 +863,7 @@ export class World extends Mini3d {
       areaBar.userData.adcode = item.adcode
       areaBar.userData.position = [x, -y, this.depth + 0.46]
 
+      // 创建每个省份名周围的光圈
       let guangQuan = this.createQuan()
       guangQuan.position.set(x, -y, this.depth + 0.46)
       guangQuan.userData.name = item.name
@@ -819,7 +874,9 @@ export class World extends Mini3d {
       areaBar.add(...hg)
 
       barGroup.add(areaBar)
+      // 创建光柱人口标签
       let barLabel = labelStyle04(item, index, new Vector3(x, -y, this.depth + 0.9 + geoHeight))
+      // 创建省份名称标签
       let nameLabel = labelNameStyle(item, index, new Vector3(x, -y - 1.5, this.depth + 0.4))
       this.allBar.push(areaBar)
       this.allBarMaterial.push(material)
@@ -861,6 +918,8 @@ export class World extends Mini3d {
       return label
     }
   }
+
+  // 创建柱子发出的辉光
   createHUIGUANG(h, color) {
     let geometry = new PlaneGeometry(1.5, h)
     geometry.translate(0, h / 2, 0)
@@ -887,6 +946,8 @@ export class World extends Mini3d {
     mesh3.rotateY((Math.PI / 180) * 120)
     return [mesh, mesh2, mesh3]
   }
+
+  // 创建底部的圈
   createQuan() {
     const guangquan1 = this.assets.instance.getResource("guangquan1")
     const guangquan2 = this.assets.instance.getResource("guangquan2")
