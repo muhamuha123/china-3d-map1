@@ -109,6 +109,8 @@ export class World extends Mini3d {
       this.createModel()
       // 添加事件（鼠标移动地图升高）
       this.addEvent()
+      // 创建省份名称及周围的圈圈
+      this.createProvinceName()
       // 创建柱状图
       this.createBar()
       // 创建粒子
@@ -275,34 +277,34 @@ export class World extends Mini3d {
         )
       })
       // 省份人口标签动画
-      // this.allProvinceLabel.map((item, index) => {
-      //   let element = item.element.querySelector(".provinces-label-style02-wrap")
-      //   let number = item.element.querySelector(".number .value")
-      //   let numberVal = Number(number.innerText)
-      //   let numberAnimate = {
-      //     score: 0,
-      //   }
-      //   tl.add(
-      //     gsap.to(element, {
-      //       duration: 0.5,
-      //       delay: 0.05 * index,
-      //       translateY: 0,
-      //       opacity: 1,
-      //       ease: "circ.out",
-      //     }),
-      //     "bar"
-      //   )
-      //   let text = gsap.to(numberAnimate, {
-      //     duration: 0.5,
-      //     delay: 0.05 * index,
-      //     score: numberVal,
-      //     onUpdate: showScore,
-      //   })
-      //   function showScore() {
-      //     number.innerText = numberAnimate.score.toFixed(0)
-      //   }
-      //   tl.add(text, "bar")
-      // })
+      this.allProvinceLabel.map((item, index) => {
+        let element = item.element.querySelector(".provinces-label-style02-wrap")
+        let number = item.element.querySelector(".number .value")
+        let numberVal = Number(number.innerText)
+        let numberAnimate = {
+          score: 0,
+        }
+        tl.add(
+          gsap.to(element, {
+            duration: 0.5,
+            delay: 0.05 * index,
+            translateY: 0,
+            opacity: 1,
+            ease: "circ.out",
+          }),
+          "bar"
+        )
+        let text = gsap.to(numberAnimate, {
+          duration: 0.5,
+          delay: 0.05 * index,
+          score: numberVal,
+          onUpdate: showScore,
+        })
+        function showScore() {
+          number.innerText = numberAnimate.score.toFixed(0)
+        }
+        tl.add(text, "bar")
+      })
       // 省份名称动画
       this.allProvinceNameLabel.map((item, index) => {
         let element = item.element.querySelector(".provinces-name-label-wrap")
@@ -785,6 +787,8 @@ export class World extends Mini3d {
     let data = sortByValue(provincesData)
     // 遍历省份数据
     data.map((item, index) => {
+      // 获取省份中心点坐标
+      let [x, y] = this.geoProjection(item.centroid)
       // 创建每个省份名周围的光圈
       let guangQuan = this.createQuan()
       guangQuan.position.set(x, -y, this.depth + 0.46)
@@ -814,7 +818,7 @@ export class World extends Mini3d {
     }
   }
 
-  // 创建柱状图
+  // 将省份名称分离出来的创建柱状图
   createBar() {
     let self = this
     let data = sortByValue(provincesData) //.filter((item, index) => index < 15);
@@ -827,9 +831,9 @@ export class World extends Mini3d {
 
     this.allBar = [] //allBar是只有一个光柱
     this.allBarMaterial = []
-    this.allGuangquan = []
+    // this.allGuangquan = []
     this.allProvinceLabel = []
-    this.allProvinceNameLabel = []
+    // this.allProvinceNameLabel = []
     data.map((item, index) => {
       // 网格
       let geoHeight = height * (item.value / max)
@@ -862,27 +866,28 @@ export class World extends Mini3d {
       areaBar.userData.name = item.name
       areaBar.userData.adcode = item.adcode
       areaBar.userData.position = [x, -y, this.depth + 0.46]
-
-      // 创建每个省份名周围的光圈
-      let guangQuan = this.createQuan()
-      guangQuan.position.set(x, -y, this.depth + 0.46)
-      guangQuan.userData.name = item.name
-      guangQuan.userData.adcode = item.adcode
-      guangQuan.userData.position = [x, -y, this.depth + 0.46]
-      this.gqGroup.add(guangQuan)
+      // 创建辉光
       let hg = this.createHUIGUANG(geoHeight, index < 3 ? 0xfffef4 : 0x77fbf5)
       areaBar.add(...hg)
-
       barGroup.add(areaBar)
+
+      // 创建每个省份名周围的光圈
+      // let guangQuan = this.createQuan()
+      // guangQuan.position.set(x, -y, this.depth + 0.46)
+      // guangQuan.userData.name = item.name
+      // guangQuan.userData.adcode = item.adcode
+      // guangQuan.userData.position = [x, -y, this.depth + 0.46]
+      // this.gqGroup.add(guangQuan)
+
       // 创建光柱人口标签
       let barLabel = labelStyle04(item, index, new Vector3(x, -y, this.depth + 0.9 + geoHeight))
       // 创建省份名称标签
-      let nameLabel = labelNameStyle(item, index, new Vector3(x, -y - 1.5, this.depth + 0.4))
+      // let nameLabel = labelNameStyle(item, index, new Vector3(x, -y - 1.5, this.depth + 0.4))
       this.allBar.push(areaBar)
       this.allBarMaterial.push(material)
-      this.allGuangquan.push(guangQuan)
+      // this.allGuangquan.push(guangQuan)
       this.allProvinceLabel.push(barLabel)
-      this.allProvinceNameLabel.push(nameLabel)
+      // this.allProvinceNameLabel.push(nameLabel)
     })
 
     this.mainSceneGroup.add(barGroup)
@@ -904,19 +909,7 @@ export class World extends Mini3d {
       label.userData.position = [position.x, position.y, position.z]
       return label
     }
-    // 省份城市标签
-    function labelNameStyle(data, index, position) {
-      let label = self.label3d.create("", "provinces-name-label", true)
-      label.init(
-        `<div class="provinces-name-label"><div class="provinces-name-label-wrap">${data.name}</div></div>`,
-        position
-      )
-      self.label3d.setLabelStyle(label, 0.08, "x")
-      label.setParent(self.provinceNameGroup)
-      label.userData.adcode = data.adcode
-      label.userData.position = [position.x, position.y, position.z]
-      return label
-    }
+
   }
 
   // 创建柱子发出的辉光
