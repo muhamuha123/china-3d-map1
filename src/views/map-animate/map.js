@@ -57,6 +57,11 @@ function sortByValue(data) {
   data.sort((a, b) => b.value - a.value)
   return data
 }
+// 针对产量进行排序
+function sortByCapacity(data) {
+  data.sort((a, b) => b.capacity - a.capacity)
+  return data
+}
 // 资源加载
 let base_url = import.meta.env.BASE_URL
 export class World extends Mini3d {
@@ -98,6 +103,7 @@ export class World extends Mini3d {
       // 企业名称标牌组
       this.badgeGroup = new Group()
       this.label3d = new Label3d(this)
+      this.flyLineGroup = new Group()
       // 设置主场景组旋转角度
       this.mainSceneGroup.rotateX(-Math.PI / 2)
       // 添加组关联
@@ -672,8 +678,9 @@ export class World extends Mini3d {
       this.childMap = null
 
       this.setMainMapVisible(true) // 主地图可见
-      // this.setLabelVisible("labelGroup", true) // 人口标牌是否可见应取决于柱状图是否可见
+      this.setLabelVisible("labelGroup", true) // 人口标牌是否可见应取决于柱状图是否可见
       this.setLabelVisible("provinceNameGroup", true) // 省份名称可见
+      this.setLabelVisible("badgeGroup", true)
     } else {
       let userData = this.history.present
 
@@ -821,10 +828,86 @@ export class World extends Mini3d {
     }
   }
 
+  // 使用真实数据创建柱状图
+  createBarReal(capacity_data) {
+    if (!capacity_data) {
+      return
+    }
+    let self = this
+    let data = sortByCapacity(capacity_data)
+    const barGroup = new Group()
+    this.barGroup = barGroup
+
+    const factor = 7
+    const height = 4.0 * factor
+    const max = data[0].capacity
+
+    this.allBar = [] // 柱子的主体，需要上移动画
+    this.allBarMaterial = [] // 柱子的材质，需要变不透明动画
+    this.allProvinceLabel = [] // 柱子上的数量标签
+    data.map((item, index) => {
+      // 网格
+      let geoHeight = height * (item.capacity / max)
+      // 材质
+      let material = new MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0, // 透明度
+        depthTest: false,
+        fog: false,
+      })
+      // BoxGeometry用于创建长方体，即柱状图中的柱子
+      const geo = new BoxGeometry(0.05 * factor, 0.05 * factor, geoHeight)
+      // 上移
+      geo.translate(0, 0, geoHeight / 2)
+      const mesh = new Mesh(geo, material)
+      mesh.renderOrder = 22
+      let areaBar = mesh
+      let [x, y] = this.geoProjection(item.center)
+      areaBar.position.set(x, -y, this.depth + 0.46)
+      areaBar.scale.set(1, 1, 0)
+      areaBar.userData.name = item.address
+      areaBar.userData.adcode = item.adcode
+      areaBar.userData.position = [x, -y, this.depth + 0.46]
+      // 创建辉光
+      let hg = this.createHUIGUANG(geoHeight, index < 3 ? 0xfffef4 : 0x77fbf5)
+      areaBar.add(...hg)
+
+      barGroup.add(areaBar)
+      // 创建光柱人口标签
+      let barLabel = labelStyle04(item, index, new Vector3(x, -y, this.depth + 0.9 + geoHeight))
+
+      this.allBar.push(areaBar)
+      this.allBarMaterial.push(material)
+      this.allProvinceLabel.push(barLabel)
+    })
+    // 添加到主场景中
+    this.mainSceneGroup.add(barGroup)
+
+    // 用于创建标签
+    function labelStyle04(data, index, position) {
+      let label = self.label3d.create("", "provinces-label-style02", true)
+      label.init(
+        `<div class="provinces-label-style02 ${index < 3 ? "yellow" : ""}">
+        <div class="provinces-label-style02-wrap">
+          <div class="number"><span>${data.address} </span><span class="value">${data.capacity}</span><span class="unit">万</span></div>
+        </div>
+        </div>`,
+        position
+      )
+      self.label3d.setLabelStyle(label, 0.05, "x")
+      label.setParent(self.labelGroup)
+      label.userData.adcode = data.adcode
+      label.userData.position = [position.x, position.y, position.z]
+      return label
+    }
+  }
+
   // 将省份名称分离出来的创建柱状图
-  createBar() {
+  createBar(capacity_data) {
     let self = this
     let data = sortByValue(provincesData) //.filter((item, index) => index < 15);
+
     const barGroup = new Group()
     this.barGroup = barGroup
 

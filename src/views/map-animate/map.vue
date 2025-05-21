@@ -41,16 +41,25 @@ let app = null
 const inputText = ref("")
 
 // 移除代码块标记并解析 JSON
-function parseJsonResponse(text) {
+function parseJsonResponse(str) {
   try {
     // 去除 ```json 和 ``` 标记
-    const cleanedText = text
-      .replace(/^.*?```json\n/, '')
-      .replace(/\n```$/, '')
-      .trim();
+    // const cleanedText = text
+    //   .replace(/^.*?```json\n/, '')
+    //   .replace(/\n```$/, '')
+    //   .trim();
+    // 提取第一个 '[' 和最后一个 ']' 之间的内容
+    const startIndex = str.indexOf('[');
+    const endIndex = str.lastIndexOf(']');
+
+    if (startIndex === -1 || endIndex === -1 || startIndex >= endIndex) {
+      throw new Error('未找到有效的 JSON 数组格式');
+    }
+
+    const jsonStr = str.substring(startIndex, endIndex + 1);
 
     // 解析 JSON
-    const jsonData = JSON.parse(cleanedText);
+    const jsonData = JSON.parse(jsonStr);
     return jsonData;
   } catch (error) {
     console.error('JSON 解析错误:', error);
@@ -110,7 +119,7 @@ const getQuestion = async () => {
   })
 }
 
-// 发送请求获得数据，再创建飞线图
+// 发送请求获得数据，再创建飞线图或柱状图
 const getCompanies = async () => {
   app.toastLoading.show() // 加载中
   let getCompaniesUrl = '/deepseek2company/'
@@ -119,7 +128,14 @@ const getCompanies = async () => {
   if (!newQuestion) {
     return
   }
+  // 判断字符串是否含有工厂或者产量
+  const hasFactory = newQuestion.includes('工厂');
+  const hasOutput = newQuestion.includes('产量');
   let realQuestion = newQuestion + '并以json格式返回答案，包含字段company_name、registered_address、longitude、latitude'
+  if (hasFactory || hasOutput) {
+    realQuestion = newQuestion + '并以json格式返回答案，包含字段address、longitude、latitude、capacity'
+  }
+
   let jsonData = {
     'question': realQuestion
   }
@@ -128,8 +144,24 @@ const getCompanies = async () => {
     let jsonResult = parseJsonResponse(res.data)
     let jsonData = processJsonData(jsonResult)
     console.log(jsonData)
-    companies_data.value = jsonData
+    if (hasFactory || hasOutput) {
+      capacity_data.value = jsonData
+    } else {
+      companies_data.value = jsonData
+    }
+    // 删除飞线图
+    flyLineDestroy()
+    // 删除柱状图
+    barDestroy()
+    // 取消加载动画
     app.toastLoading.hide()
+    // 根据问题选择创建柱状图或飞线图
+    if (hasFactory || hasOutput) {
+      barCreate()
+    } else {
+      flyLineCreate()
+    }
+
   }).catch(error => {
     console.log(error)
     app.toastLoading.hide()
@@ -137,30 +169,28 @@ const getCompanies = async () => {
 }
 
 // 企业图谱数据
-let companies_data = ref([])
-// 飞线图测试数据
-// let companies_data = [
-//   {
-//     adcode: 150000,
-//     company_name: "一汽富华生态有限公司",
-//     center: [125.244097, 43.874493],
-//   },
-//   {
-//     adcode: 140000,
-//     company_name: "一汽红旗（北京）特种产品展示及保障服务有限公司",
-//     center: [116.363248, 40.015386],
-//   },
-//   {
-//     adcode: 320000,
-//     company_name: "一汽股权投资（天津）有限公司",
-//     center: [117.76852, 39.070133],
-//   },
-//   {
-//     adcode: 500000,
-//     company_name: "一汽出行科技有限公司",
-//     center: [116.190073, 39.912352],
-//   }
-// ]
+let companies_data = ref([
+  {
+    adcode: 150000,
+    company_name: "一汽富华生态有限公司",
+    center: [125.244097, 43.874493],
+  },
+  {
+    adcode: 140000,
+    company_name: "一汽红旗（北京）特种产品展示及保障服务有限公司",
+    center: [116.363248, 40.015386],
+  },
+  {
+    adcode: 320000,
+    company_name: "一汽股权投资（天津）有限公司",
+    center: [117.76852, 39.070133],
+  },
+  {
+    adcode: 500000,
+    company_name: "一汽出行科技有限公司",
+    center: [116.190073, 39.912352],
+  }
+])
 
 // 用于手动创建飞线图
 const flyLineCreate = () => {
@@ -176,6 +206,7 @@ const flyLineCreate = () => {
 const flyLineDestroy = () => {
   let ins = app.flyLineGroup.getInstance()
   disposeGroup(ins)
+  // disposeGroup(app.flyLineGroup)
   disposeGroup(app.flyLineFocusGroup)
   disposeGroup2(app.badgeGroup)
 }
@@ -184,25 +215,25 @@ const flyLineDestroy = () => {
 let capacity_data = ref([
   {
     adcode: 150000,
-    company_name: "一汽长春工厂",
+    address: "一汽长春工厂",
     center: [125.244097, 43.874493],
     capacity: 20,
   },
   {
     adcode: 140000,
-    company_name: "一汽成都工厂",
+    address: "一汽成都工厂",
     center: [116.363248, 40.015386],
     capacity: 5,
   },
   {
     adcode: 320000,
-    company_name: "一汽天津工厂",
+    address: "一汽天津工厂",
     center: [117.76852, 39.070133],
     capacity: 15,
   },
   {
     adcode: 500000,
-    company_name: "一汽武汉工厂",
+    address: "一汽武汉工厂",
     center: [116.190073, 39.912352],
     capacity: 10,
   }
@@ -210,7 +241,11 @@ let capacity_data = ref([
 
 // 用于手动创建柱状图
 const barCreate = () => {
-  app.createBar() // 创建柱状图，但是没有显示出来
+  if (capacity_data.value.length == 0) {
+    console.log('没有产量数据')
+    return
+  }
+  app.createBarReal(capacity_data.value) // 创建柱状图，但是没有显示出来
   let tl = gsap.timeline() // 创建时间线
   // 柱状图升起动画
   app.allBar.map((item, index) => {
@@ -564,6 +599,7 @@ onBeforeUnmount(() => {
     // margin-bottom: 50px;
     bottom: 50px;
     z-index: 99999;
+    opacity: 0.7;
 
     span {
       color: #ffe70b;
